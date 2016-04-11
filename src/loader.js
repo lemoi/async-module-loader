@@ -4,6 +4,7 @@ API:
 		1.加载脚本文件
 		2.判断其依赖关系 找出没有加载完成的模块
 		3.加载未加载的模块，判断依赖关系
+		需要解决的问题 循环引用
 */
 
 /* the loaderjs is just used for browser*/
@@ -14,20 +15,20 @@ var Loader=(function(){
 		@param {string} url fetch的地址
 		@param {function} callback 用来执行加载完成的操作  
 	*/
-	var fetchTextFromURL=function(url,callback){
+  	var fetchTextFromURL=function(url,callback){
     var xhr = new XMLHttpRequest();
     xhr.onerror = error;
     function error() {
    		throw new Error('XHR error' + (xhr.status ? ' (' + xhr.status + (xhr.statusText ? ' ' + xhr.statusText  : '') + ')' : '') + ' loading ' + url);
     }
     xhr.onreadystatechange = function () {
-      if (xhr.readyState === 4) {
-        if (xhr.status === 200) {
-          callback(xhr.responseText);
-        }else {
-          error();
-        }
-      }
+		if (xhr.readyState === 4) {
+		if (xhr.status === 200) {
+		  callback(xhr.responseText);
+		}else {
+		  error();
+		}
+		}
     };
     xhr.open("GET", url, true);
     if (xhr.setRequestHeader) {
@@ -36,29 +37,29 @@ var Loader=(function(){
     xhr.send();
 	};
 	var loadScript=function(path,parent,callback){
-			if(Modules.hasAdd(path)) return;
-			var _module=new Module(path,parent);
-			Modules.set(path,_module);
-			fetchTextFromURL(path,function(script_text){
-				var script=new Script(script_text,path);
-				_module.children=script.deP;
-				if(_module.children.length===0){
-					setTimeout(function(){
-						script.init();
-						if(callback!==undefined) setTimeout(callback,0);
+		if(Modules.hasAdd(path)) return;
+		var _module=new Module(path,parent);
+		Modules.set(path,_module);
+		fetchTextFromURL(path,function(script_text){
+			var script=new Script(script_text,path);
+			_module.children=script.deP;
+			if(_module.children.length===0){
+				setTimeout(function(){
+					script.init();
+					if(callback!==undefined) setTimeout(callback,0);
+				},0);
+			}else{
+				Modules.register(_module.children,function(){
+					script.init();
+					if(callback!==undefined) setTimeout(function(){
+						callback(_module.exports);
 					},0);
-				}else{
-					Modules.register(_module.children,function(){
-						script.init();
-						if(callback!==undefined) setTimeout(function(){
-							callback(_module.exports);
-						},0);
-					});
-					for(var i in _module.children){
-						var load=loadScript(_module.children[i],path);
-					}
+				});
+				for(var i in _module.children){
+					var load=loadScript(_module.children[i],path);
 				}
-			});
+			}
+		});
 	};
 	var Script=function(script_text,path){
 		this.deP=Script.getDep(script_text);
