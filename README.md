@@ -63,5 +63,5 @@ these are in a dirctory:
 		run.js
 		main.js
 ```
-these module will be loaded asynchronously and execute automatically
+these modules will be loaded asynchronously and execute automatically
 
