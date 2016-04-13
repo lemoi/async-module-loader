@@ -32,7 +32,7 @@ const say=require('say.js');
 const run=require('run.js');
 say();
 run.slow();
-exports.main='main.js';
+exports.main='Hello World';
 ```
 the html file:
 

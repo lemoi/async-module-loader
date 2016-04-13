@@ -15,6 +15,25 @@ var Loader=(function(){
 		@param {string} url fetch的地址
 		@param {function} callback 用来执行加载完成的操作  
 	*/
+		var deepCopy=function(obj){
+			var obj_copy={};
+			function copy(o,target){
+				for(var i in o){ 	
+					if(typeof o[i]==='object'&&o[i]!==null){
+						target[i]={};
+						copy(o[i],target[i]);	
+					}else{
+						target[i]=o[i];
+					}
+				}
+			}
+			if(typeof obj==='function'){
+				obj_copy=obj;
+			}else{
+				copy(obj,obj_copy);
+			}
+			return obj_copy;
+		};
   	var fetchTextFromURL=function(url,callback){
     var xhr = new XMLHttpRequest();
     xhr.onerror = error;
@@ -98,6 +117,7 @@ var Loader=(function(){
 		}
 		return path;
 	};
+
 	var Module=function(path,parent){
 		this.exports={};
 		this.loaded=false;
@@ -106,7 +126,7 @@ var Loader=(function(){
 		this.children=null;
 	};
 	Module.prototype.require=function(path){
-		return Modules.get(Path.polyfill(path)).exports;
+		return deepCopy(Modules.get(Path.polyfill(path)).exports);
 	};
 	var Modules=(function(){
 		var __M=[],path_id_map={},__fnQueue={};
