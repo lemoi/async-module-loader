@@ -5,6 +5,7 @@ http.createServer(function(req,res){
 	var readStream=fs.createReadStream(__dirname+req.url);
 	readStream.on('error',function(err){
 		console.log(err);
+		res.end();
 	});
 	readStream.pipe(res);
 }).listen(3000,function(){

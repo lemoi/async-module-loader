@@ -3,7 +3,7 @@ browser module loader compatible with nodejs
 
 *!warning:the loaderjs is just used for browser*
 
-you can use { require , exports , module.exports } to load modules asynchronism just like the nodejs
+you can use { require , exports , module.exports } to load modules asynchronously just like the nodejs
 
 for example:
 you have these modules:
@@ -55,7 +55,7 @@ the html file:
 </body>
 </html>
 ```
-these are in a dirctory:
+these are in a directory:
 ```
 	/
 		test.html

@@ -16,21 +16,35 @@ var Loader=(function(){
 		@param {function} callback 用来执行加载完成的操作  
 	*/
 		var deepCopy=function(obj){
-			var obj_copy={};
-			function copy(o,target){
+			var obj_copy,type=typeof obj;
+			function copyObj(o,target){
 				for(var i in o){ 	
 					if(typeof o[i]==='object'&&o[i]!==null){
 						target[i]={};
-						copy(o[i],target[i]);	
+						copyObj(o[i],target[i]);	
+					}else if(typeof o[i]==='function'){
+						target[i]=copyFunc(o[i]);
 					}else{
 						target[i]=o[i];
 					}
 				}
 			}
-			if(typeof obj==='function'){
-				obj_copy=obj;
+			function copyFunc(func){
+				var temp=function(){
+					return func.apply(this,arguments);
+				};
+				for(var key in func){
+					temp[key]=deepCopy(func[key]);
+				}
+				return temp;
+			}
+			if(type==='function'){
+				obj_copy=copyFunc(obj);
+			}else if(type==='object'&&obj!==null){
+				obj_copy={};
+				copyObj(obj,obj_copy);
 			}else{
-				copy(obj,obj_copy);
+				obj_copy=obj;
 			}
 			return obj_copy;
 		};
