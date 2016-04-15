@@ -5,7 +5,12 @@ browser module loader compatible with nodejs
 
 you can use { require , exports , module.exports } to load modules asynchronously just like the nodejs
 
-for example:
+**run the example** 
+
+`npm install`
+
+`npm start`
+
 you have these modules:
 
 ```js

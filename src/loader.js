@@ -10,11 +10,6 @@ API:
 /* the loaderjs is just used for browser*/
 if(Loader!==undefined) throw new Error('the loader namespace may be used for other lib');
 var Loader=(function(){
-	/*
-		ajax加载文件
-		@param {string} url fetch的地址
-		@param {function} callback 用来执行加载完成的操作  
-	*/
 		var deepCopy=function(obj){
 			var obj_copy,type=typeof obj;
 			function copyObj(o,target){
@@ -48,6 +43,11 @@ var Loader=(function(){
 			}
 			return obj_copy;
 		};
+		/*
+			ajax加载文件
+			@param {string} url fetch的地址
+			@param {function} callback 用来执行加载完成的操作  
+		*/
   	var fetchTextFromURL=function(url,callback){
     var xhr = new XMLHttpRequest();
     xhr.onerror = error;
@@ -108,7 +108,7 @@ var Loader=(function(){
 		var script=document.createElement('script');
 		script.text=this.generate();
 		Head.appendChild(script);
-		Head.removeChild(script);
+		//Head.removeChild(script);
 	};
 	Script.regExp=/require\((["'])(.*?)\1\)/g;
 	Script.getDep=function(script_text){
@@ -178,7 +178,7 @@ var Loader=(function(){
 			return !!((id=IdManager.getId(path))&&__M[id]&&__M[id].loaded);
 		}
 		function register(deps,callback){
-			var i,id,idList=[],encode,waitFor=[],fnObj;
+			var i,id,idList=[],encode,waitFor=[],fnObj,temp;
 			for(i=0;i<deps.length;i++){	
 				id=IdManager.setId(deps[i]);
 				idList.push(id);
@@ -187,7 +187,9 @@ var Loader=(function(){
 			encode=idList.join('&');
 			if(__fnQueue[encode]!==undefined)
 				if(typeof __fnQueue[encode].exec === 'function'){
-					__fnQueue[encode].exec=Array(__fnQueue[encode].exec).push(callback);
+					temp=__fnQueue[encode].exec;
+					__fnQueue[encode].exec=[];
+					__fnQueue[encode].exec.push(temp,callback);
 				}else{
 					__fnQueue[encode].exec.push(callback);
 				}
