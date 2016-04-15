@@ -108,7 +108,7 @@ var Loader=(function(){
 		var script=document.createElement('script');
 		script.text=this.generate();
 		Head.appendChild(script);
-		//Head.removeChild(script);
+		Head.removeChild(script);
 	};
 	Script.regExp=/require\((["'])(.*?)\1\)/g;
 	Script.getDep=function(script_text){
@@ -201,7 +201,7 @@ var Loader=(function(){
 				fnObj.finished=false;
 			}
 		}
-		function syncExec(queue,key){
+		function asyncExec(queue,key){
 			if(typeof queue[key].exec ==='function'){
 				queue[key].finished=true;
 				setTimeout(function(){
@@ -235,7 +235,7 @@ var Loader=(function(){
 				if(index===undefined)  continue;
 				waitFor.splice(index,1);
 				if(waitFor.length===0){
-					syncExec(__fnQueue,i);
+					asyncExec(__fnQueue,i);
 				}
 			}
 		}
@@ -253,7 +253,7 @@ var Loader=(function(){
 	//入口
 	rtObj.setEntry=function(path,callback){
 		path=Path.polyfill(path);
-		var load=loadScript(path,'LOADER',callback);
+		loadScript(path,'LOADER',callback);
 	};
 	rtObj.checkOut=Modules.checkOut;
 	// Obejct.defineProperties(rtObj,{
