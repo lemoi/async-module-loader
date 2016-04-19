@@ -27,5 +27,5 @@ gulp.task('open-browser',function(){
 	  }
 	});
 });
-gulp.task('default',['server-start','open-browser']);
+gulp.task('default',['compress','server-start','open-browser']);
 gulp.watch('./src/*.js', ['compress']);

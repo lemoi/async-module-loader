@@ -1,99 +1,128 @@
-/*
-API:
-    Loader.setEntry('main.js');加载入口
-		1.加载脚本文件
-		2.判断其依赖关系 找出没有加载完成的模块
-		3.加载未加载的模块，判断依赖关系
-		需要解决的问题 循环引用
+/* 
+	The loaderjs is just used for browser	
+
+	Version:@0.1.5
 */
 
-/* the loaderjs is just used for browser*/
+/*
+API:
+    Loader.setEntry('main.js',[function]);加载入口
+*/
+
 if(Loader!==undefined) throw new Error('the loader namespace may be used for other lib');
+
 var Loader=(function(){
-		var deepCopy=function(obj){
-			var obj_copy,type=typeof obj;
-			function copyObj(o,target){
-				for(var i in o){ 	
-					if(typeof o[i]==='object'&&o[i]!==null){
-						target[i]={};
-						copyObj(o[i],target[i]);	
-					}else if(typeof o[i]==='function'){
-						target[i]=copyFunc(o[i]);
-					}else{
-						target[i]=o[i];
-					}
+	var deepCopy=function(obj){
+		var obj_copy,type=typeof obj;
+		function copyObj(o,target){
+			for(var i in o){ 	
+				if(typeof o[i]==='object'&&o[i]!==null){
+					target[i]={};
+					copyObj(o[i],target[i]);	
+				}else if(typeof o[i]==='function'){
+					target[i]=copyFunc(o[i]);
+				}else{
+					target[i]=o[i];
 				}
 			}
-			function copyFunc(func){
-				var temp=function(){
-					return func.apply(this,arguments);
-				};
-				for(var key in func){
-					temp[key]=deepCopy(func[key]);
-				}
-				return temp;
+		}
+		function copyFunc(func){
+			var temp=function(){
+				return func.apply(this,arguments);
+			};
+			for(var key in func){
+				temp[key]=deepCopy(func[key]);
 			}
-			if(type==='function'){
-				obj_copy=copyFunc(obj);
-			}else if(type==='object'&&obj!==null){
-				obj_copy={};
-				copyObj(obj,obj_copy);
-			}else{
-				obj_copy=obj;
-			}
-			return obj_copy;
-		};
-		/*
-			ajax加载文件
-			@param {string} url fetch的地址
-			@param {function} callback 用来执行加载完成的操作  
-		*/
-  	var fetchTextFromURL=function(url,callback){
+			return temp;
+		}
+		if(type==='function'){
+			obj_copy=copyFunc(obj);
+		}else if(type==='object'&&obj!==null){
+			obj_copy={};
+			copyObj(obj,obj_copy);
+		}else{
+			obj_copy=obj;
+		}
+		return obj_copy;
+	};
+	/*
+		ajax加载文件
+		@param {string} url fetch的地址
+		@param {function} callback 用来执行加载完成的操作  
+	*/
+	var fetchTextFromURL=function(url,callback){
     var xhr = new XMLHttpRequest();
     xhr.onerror = error;
     function error() {
    		throw new Error('XHR error' + (xhr.status ? ' (' + xhr.status + (xhr.statusText ? ' ' + xhr.statusText  : '') + ')' : '') + ' loading ' + url);
     }
     xhr.onreadystatechange = function () {
-		if (xhr.readyState === 4) {
-		if (xhr.status === 200) {
-		  callback(xhr.responseText);
-		}else {
-		  error();
-		}
-		}
+			if (xhr.readyState === 4) {
+				if (xhr.status === 200) {
+				  callback(xhr.responseText);
+				}else {
+				  error();
+				}
+			}
     };
     xhr.open("GET", url, true);
     if (xhr.setRequestHeader) {
-      xhr.setRequestHeader('Accept', 'application/x-es-module, */*');
+      	xhr.setRequestHeader('Accept', 'application/x-es-module, */*');
     }
     xhr.send();
 	};
+
 	var loadScript=function(path,parent,callback){
-		if(Modules.hasAdd(path)) return;
-		var _module=new Module(path,parent);
-		Modules.set(path,_module);
-		fetchTextFromURL(path,function(script_text){
-			var script=new Script(script_text,path);
-			_module.children=script.deP;
-			if(_module.children.length===0){
-				setTimeout(function(){
+		var _m;
+		var checkReferenceCircle=function(parentPath){
+			var parentPaths=[parentPath],_module,i=0;
+			while((_module=Modules.get(parentPath))!==null){
+					parentPaths.push(_module.parent);
+					i++;
+					if(i>5) break;
+					parentPath=_module.parent;
+			}		
+			return function(path){
+				for(var i=0;i<parentPaths.length-1;i++){//length-1 消除Loader
+					if(parentPaths[i]===path)	return true;
+				}
+				return false;
+			};
+		};
+		function build(path,parent,callback){
+			var _module=new Module(path,parent);
+			fetchTextFromURL(path,function(script_text){
+				var script=new Script(script_text,path),check;
+				_module.children=script.deP;
+				check=_module.children.length===0?null:checkReferenceCircle(path);
+				Modules.register(_module.children,check,function(){
 					script.init();
-					if(callback!==undefined) setTimeout(callback,0);
-				},0);
-			}else{
-				Modules.register(_module.children,function(){
-					script.init();
-					if(callback!==undefined) setTimeout(function(){
-						callback(_module.exports);
-					},0);
+					if(callback!==undefined){
+						setTimeout(function(){
+							callback(_module.exports);
+						},0);
+					}
 				});
 				for(var i in _module.children){
-					var load=loadScript(_module.children[i],path);
+					if(!Modules.hasAdd(_module.children[i])){
+						build(_module.children[i],path);
+					}
 				}
-			}
-		});
+			});			
+		}
+		if((_m=Modules.get(path))!==null){
+			register(_m.children,null,function(){
+				if(callback!==undefined){
+					setTimeout(function(){
+						callback(_m.exports);
+					},0);
+				}				
+			});
+		}else{
+			build(path,parent,callback);
+		}
 	};
+
 	var Script=function(script_text,path){
 		this.deP=Script.getDep(script_text);
 		this.wrapStart='(function(){var module=Loader.getModule(\''+path+'\');(function(require,exports){';
@@ -118,6 +147,7 @@ var Loader=(function(){
 		}
 		return deP;
 	};
+
 	var Path=function(){};
 	Path.regExp=/^(\.{1,2})?(\/)?.*?\.js/;
 	Path.polyfill=function(path){
@@ -138,6 +168,7 @@ var Loader=(function(){
 		this.id=path;
 		this.parent=parent;//' LOADER'为入口
 		this.children=null;
+		Modules.set(path,this);
 	};
 	Module.prototype.require=function(path){
 		return deepCopy(Modules.get(Path.polyfill(path)).exports);
@@ -159,8 +190,7 @@ var Loader=(function(){
 			return path_id_map[path];
 		};
 		function hasAdd(path){
-			var id;
-			return !!((id=IdManager.getId(path))&&(__M[id]));
+			return get(path)!==null;
 		}
 		function set(path,module){
 			var id=IdManager.setId(path);
@@ -169,20 +199,34 @@ var Loader=(function(){
 		function get(path){
 			var id,module;
 			if(!((id=IdManager.getId(path))&&(module=__M[id]))){
-				throw new Error("can't get the module");
+				return null;
 			}
 			return module;
 		}
 		function hasLoaded(path){
-			var id;
-			return !!((id=IdManager.getId(path))&&__M[id]&&__M[id].loaded);
+			var _m;
+			return !!((_m=get(path))&&_m.loaded);
 		}
-		function register(deps,callback){
+		function register(deps,checkFnc,callback){
 			var i,id,idList=[],encode,waitFor=[],fnObj,temp;
+			if(deps.length===0){
+				setTimeout(callback,0);
+				return;
+			}
 			for(i=0;i<deps.length;i++){	
 				id=IdManager.setId(deps[i]);
 				idList.push(id);
-				if(!hasLoaded(deps[i])) waitFor.push(id);
+				if(!hasLoaded(deps[i])){
+					if(checkFnc!==null){
+						if(!checkFnc(deps[i])) waitFor.push(id);						
+					}else{
+						waitFor.push(id);	
+					}
+				}
+			}
+			if(waitFor.length===0){
+				setTimeout(callback,0);
+				return;
 			}
 			encode=idList.join('&');
 			if(__fnQueue[encode]!==undefined)
@@ -247,33 +291,22 @@ var Loader=(function(){
 			hasAdd:hasAdd
 		};
 	})();
-	var rtObj={};
-	//不暴露设置不可遍历
-	rtObj.getModule=Modules.get;
-	//入口
-	rtObj.setEntry=function(path,callback){
-		path=Path.polyfill(path);
-		loadScript(path,'LOADER',callback);
-	};
-	rtObj.checkOut=Modules.checkOut;
-	// Obejct.defineProperties(rtObj,{
-	// 	module:{
-	// 		value:module
-	// 	},
-	// 	entry:{
-	// 		set:function(){
 
-	// 		}
-	// 	}
-	// });
+	var rtObj={};
+	Object.defineProperties(rtObj,{
+		getModule:{
+			value:Modules.get
+		},
+		checkOut:{
+			value:Modules.checkOut
+		},
+		setEntry:{
+			value:function(path,callback){
+				path=Path.polyfill(path);
+				loadScript(path,'LOADER',callback);
+			},
+			enumerable:true
+		}
+	});
 	return rtObj;
 })();
-/*
-function(){
-	module=new Module();
-	function(exports,require){
-		
-	}(module.exports,module.require)	
-}();
-
-*/

@@ -14,19 +14,32 @@ you can use { require , exports , module.exports } to load modules asynchronousl
 you have these modules:
 
 ```js
+//log.js
+
+module.exports=function(words){
+	document.body.appendChild(document.createTextNode(words));
+	document.body.appendChild(document.createElement('br'));
+};
+```
+
+```js
 //say.js
 
+const log=require('log');
 module.exports=function(){
-	console.log('I am saying');
+    console.log('I am saying');
+    log('I am saying');
 }
 ```
 
 ```js
 //run.js
 
+const log=require('log');
 exports.slow=function(){
-	console.log('slow down');
-}
+    console.log('slow down');
+    log('slow down');
+};
 ```
 then,the entry:
 
@@ -69,4 +82,10 @@ these are in a directory:
 		main.js
 ```
 these modules will be loaded asynchronously and execute automatically
+
+the outputs:
+```
+I am saying
+slow down
+```
 
