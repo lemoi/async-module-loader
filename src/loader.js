@@ -276,7 +276,7 @@ var Loader=(function(){
 				if(__fnQueue[i].finished) continue;
 				waitFor=__fnQueue[i].waitfor;
 				index=waitFor.indexOf(id);
-				if(index===undefined)  continue;
+				if(index===-1)  continue;
 				waitFor.splice(index,1);
 				if(waitFor.length===0){
 					asyncExec(__fnQueue,i);
