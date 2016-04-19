@@ -1,6 +1,8 @@
 # async-module-loader
 browser module loader compatible with nodejs
 
+**version 0.1.5**
+
 *!warning:the loaderjs is just used for browser*
 
 you can use { require , exports , module.exports } to load modules asynchronously just like the nodejs
