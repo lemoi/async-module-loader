@@ -79,7 +79,6 @@ var loadScript=function(path,parent,callback){
     while((_module=Modules.get(parentPath))!==null){
       parentPaths.push(_module.parent);
       i++;
-      if(i>5) break;
       parentPath=_module.parent;
     }   
     return function(path){
@@ -159,7 +158,7 @@ Path.polyfill=function(path){
   }else if(result[1]===undefined){
     return "."+path;
   }
-    return path;
+  return path;
 };
 
 var Module=function(path,parent){
